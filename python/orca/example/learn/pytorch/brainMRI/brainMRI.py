@@ -122,9 +122,9 @@ def model_creator(config):
 
 
 def optim_creator(model, config):
-    optimizer = optim.SGD(model.parameters(),
-                          lr=config.get("lr", 0.001),
-                          momentum=config.get("momentum", 0.9))
+    optimizer = optim.Adam(model.parameters(),
+                           lr=config.get("lr", 0.001),
+                           )
     return optimizer
 
 
@@ -182,12 +182,15 @@ if args.backend in ["torch_distributed", "spark"]:
                                           optimizer=optim_creator,
                                           loss=loss_creator,
                                           model_dir=args.model_dir,
+                                          metrics=[Accuracy(), dice_coef_metric],
                                           backend=args.backend,
                                           config=config,
                                           use_tqdm=True
                                           )
 
     orca_estimator.fit(data=train_loader_creator, epochs=args.epochs, batch_size=batch_size)
+    res = orca_estimator.evaluate(data=test_loader_creator, batch_size=batch_size)
+    print(res)
 else:
     raise NotImplementedError("Only torch_distributed and spark are supported as the backend,"
                               " but got {}".format(args.backend))
